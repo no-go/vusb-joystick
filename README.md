@@ -3,7 +3,7 @@ V-USB Joystick
 This uses V-USB to implement a USB joystick with minimal code. It supports up, down, left, right and three buttons (and can trivially handle 5 more). 
 
 The code runs on 12MHz (external quarz) atmega8 chip. I use the usb 5V atmega power supply and
-two 3.3V Z-Diodes vusb work around for D+ and D-
+two 3.6V Z-Diodes vusb work around for D+ and D-
 
 ![Photo](photo.jpg)
 
@@ -43,4 +43,4 @@ host check more often (up to 1000 times a second) by changing its hid polling ra
 
 Code Base
 ---------
-by Shay Green <gblargg@gmail.com> with LGPL
+by [Shay Green](https://github.com/gblargg/vusb-joystick) with LGPL
