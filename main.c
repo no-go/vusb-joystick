@@ -1,5 +1,4 @@
 /* Minimal V-USB joystick example. Runs on USBasp hardware.
-
 Copyright (C) 2014 Shay Green
 Licensed under GPL v2 or later. See License.txt. */
 
@@ -14,34 +13,33 @@ Licensed under GPL v2 or later. See License.txt. */
 static uint8_t report [3]; // current
 static uint8_t report_out [3]; // last sent over USB
 
-static void init_joy( void )
-{
-	// Configure as inputs with pull-ups
-	DDRB  &= ~0x3c;
-	PORTB |=  0x3c;
-	
-	DDRD  &= ~0x03;
-	PORTD |=  0x03;
+static void init_joy( void ) {
+    DDRB |= 1<<PB0;    // set PB0 to output LED
+    
+    DDRC  = 0b00000000; // all input
+    PORTC = 0b00111111; // all 6 PULLUP
+
+    // 1111 1010 bin: activate pull-ups except on USB lines
+    PORTD = 0b11110000;
 }
 
-static void read_joy( void )
-{
+static void read_joy( void ) {
 	report [0] = 0;
 	report [1] = 0;
 	report [2] = 0;
 	
-	// Y
-	if ( ! (PINB & 0x04) ) report [0] = -127;
-	if ( ! (PINB & 0x08) ) report [0] = +127;
-	
 	// X
-	if ( ! (PINB & 0x10) ) report [1] = -127;
-	if ( ! (PINB & 0x20) ) report [1] = +127;
+	if ( ! bit_is_set(PINC, PC3) ) report [0] = -127; // left
+	if ( ! bit_is_set(PINC, PC2) ) report [0] = +127; // right
+	
+	// Y
+	if ( ! bit_is_set(PINC, PC4) ) report [1] = +127; // up
+	if ( ! bit_is_set(PINC, PC5) ) report [1] = -127; // down
 	
 	// Buttons
-	if ( ! (PIND & 0x01) ) report [2] |= 0x01;
-	if ( ! (PIND & 0x02) ) report [2] |= 0x02;
-	// ...
+	if ( ! bit_is_set(PINC, PC1) ) report [2] |= 0x01;
+	if ( ! bit_is_set(PINC, PC0) ) report [2] |= 0x02;
+	if ( ! bit_is_set(PIND, PD7) ) report [2] |= 0x04;
 }
 
 // X/Y joystick w/ 8-bit readings (-127 to +127), 8 digital buttons
@@ -70,30 +68,26 @@ PROGMEM const char usbHidReportDescriptor [USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH]
 	0xc0            // END_COLLECTION
 };
 
-uint8_t usbFunctionSetup( uint8_t data [8] )
-{
+uint8_t usbFunctionSetup( uint8_t data [8] ) {
 	usbRequest_t const* rq = (usbRequest_t const*) data;
 
 	if ( (rq->bmRequestType & USBRQ_TYPE_MASK) != USBRQ_TYPE_CLASS )
 		return 0;
 	
-	switch ( rq->bRequest )
-	{
-	case USBRQ_HID_GET_REPORT: // HID joystick only has to handle this
+	switch ( rq->bRequest ) {
+        case USBRQ_HID_GET_REPORT: // HID joystick only has to handle this
 		usbMsgPtr = (usbMsgPtr_t) report_out;
 		return sizeof report_out;
 	
 	//case USBRQ_HID_SET_REPORT: // LEDs on joystick?
 	
-	default:
-		return 0;
+        default:
+            return 0;
 	}
 }
 
-static void toggle_led( void )
-{
-	DDRC  |= 1;
-	PORTC ^= 1;
+static void toggle_led(void) {
+    PORTB ^= (1 << PB0);
 }
 
 int main( void )
